@@ -1,0 +1,93 @@
+%%UIN:928009686
+
+% Load plaintext, ciphertext, traces, and sbox
+load 'aes_power_data.mat';  
+bytes_recovered = zeros (1,16);
+n_traces = 200; 
+
+traces = traces (1:n_traces, :); 
+
+%% Launch DPA and compute DoM , size of DoM 256 x 40000
+%part 1 (Launch DPA)
+
+byte_to_attack=16
+key_guess = uint8([0:255]) %1*256
+
+y = zeros(n_traces, 256);  % Initialize the predicted Sbox output matrix
+
+input_plaintext = plain_text(:,byte_to_attack)
+
+for i = 1:200
+ y(i,:)=sbox(bitxor(key_guess,input_plaintext(i))+1)
+end
+
+power_consumption = bitget(y,1); % LSB (index = 1)
+
+% part 2 (DoM)
+
+% Initialize power trace classification matrix for LSB
+group_0_sum = zeros(1, size(traces, 2));  
+group_1_sum = zeros(1, size(traces, 2)); 
+count_0 = 0;  % Group 0 trace counter
+count_1 = 0;  % Group 1 trace counter
+
+% Initialize DoM 256 x 40000
+DoM = zeros(256, size(traces, 2));  
+
+% Loop through each key guess and classify power traces
+
+for col = 1:256
+    for trace_idx = 1:n_traces
+        if power_consumption(trace_idx, col) == 1
+            group_1_sum = group_1_sum + traces(trace_idx, :); 
+            count_1 = count_1 + 1;
+        else
+            group_0_sum = group_0_sum + traces(trace_idx, :);
+            count_0 = count_0 + 1;
+        end
+    end
+    
+% compute DoM
+
+    if count_0 > 0 && count_1 > 0
+        mean_0 = group_0_sum / count_0;  
+        mean_1 = group_1_sum / count_1;  
+        DoM(col, :) = mean_1 - mean_0;  %DoM power trace for this key guess
+    end
+    
+% Reset power trace classification matrix for LSB next key guess
+    group_0_sum = zeros(1, size(traces, 2));
+    group_1_sum = zeros(1, size(traces, 2));
+    count_0 = 0;
+    count_1 = 0;
+end
+
+% max DoM trace value = correct key guess
+
+[max_value, idx] = max(DoM(:));  % Find the maximum value in DoM matrix
+[key_guess_idx, sample_idx] = ind2sub(size(DoM), idx);  % Get the key guess and sample index
+
+fprintf('The max DoM value: %f\n', max_value);
+fprintf('The key guess for the max DoM value is: %d\n', key_guess_idx);
+
+
+%% Sampe code to  plots 
+OFFSSET= 0; % for N=64, 0 , 64. 128, 192
+N=8; % for an 8x8 plot
+total_keys = 256;  
+plots_per_figure = N * N;
+
+for fig_num = 1:ceil(total_keys / plots_per_figure)
+    figure;  % Create a new figure for every 64 plots
+    for i = 1:N
+        for j  =1:N
+            key_idx = (fig_num - 1) * plots_per_figure + (i - 1) * N + j + OFFSSET;
+            if key_idx <= total_keys
+                subplot(N,N,(i-1)*N+j)
+                plot(DoM ((i-1)*N+j+OFFSSET, :) )
+                title(['Key Guess: ', num2str(key_idx)]);
+            end
+        end
+    end
+end
+
