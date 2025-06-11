@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .animated-circles {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .animated-circle {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .small-circle,
+        .smaller-circle {
+            position: absolute;
+            animation: orbit 5s linear infinite;
+        }
+
+        .small-circle {
+            width: 50px;
+            height: 50px;
+            animation-duration: 4s;
+        }
+
+        .smaller-circle {
+            width: 25px;
+            height: 25px;
+            animation-duration: 3s;
+        }
+
+        @keyframes colorChange {
+            0% { fill: #FF5733; }
+            25% { fill: #33FF57; }
+            50% { fill: #3357FF; }
+            75% { fill: #F333FF; }
+            100% { fill: #FF33A1; }
+        }
+
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(75px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(75px) rotate(-360deg); }
+        }
+
+        .animated-circle circle,
+        .small-circle circle,
+        .smaller-circle circle {
+            animation: colorChange 5s infinite;
+        }
+
+        body, label, button, p {
+            font-family: 'Alegreya', serif;
+        }
+
+        h1 {
+            font-family: 'Alegreya', serif;
+            font-weight: 700; /* Bold font for header */
+            text-align: center; /* Center align the header text */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Add spacing between elements */
+        }
+
+        body.home-page {
+            background-color: #fffaee; /* Match background color with circles.html */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+        }
+
+        header {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="home-page">
+    <header>
+        <h1>Circles</h1>
+    </header>
+    <div class="container">
+        <div class="animated-circles">
+            <svg class="animated-circle" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" />
+            </svg>
+            <svg class="small-circle" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" />
+            </svg>
+            <svg class="smaller-circle" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="30" /> <!-- Increased radius from 25 to 30 -->
+            </svg>
+        </div>
+        <label for="dob">ENTER YOUR DATE OF BIRTH</label>
+        <input type="date" id="dob" name="dob">
+        <button onclick="calculateTotalMonths()">Your Life In Circles</button>
+        <p id="result"></p>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Add event listener for keydown to detect Enter key press
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                calculateTotalMonths();
+            }
+        });
+
+        function calculateTotalMonths() {
+            const dob = new Date(document.getElementById('dob').value);
+            const today = new Date();
+            const years = today.getFullYear() - dob.getFullYear();
+            const months = today.getMonth() - dob.getMonth() + (years * 12);
+            const totalMonths = months + (today.getDate() < dob.getDate() ? -1 : 0);
+
+            if (totalMonths < 0 || totalMonths > 960) {
+                document.getElementById('result').textContent = 'Date of birth entered incorrectly. Please re-enter date of birth.';
+            } else {
+                document.getElementById('result').textContent = `Total months: ${totalMonths}`;
+                changeBackgroundColor(totalMonths);
+                window.location.href = `circles.html?totalMonths=${totalMonths}`;
+            }
+        }
+
+        function changeBackgroundColor(totalMonths) {
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33A1'];
+            const colorIndex = totalMonths % colors.length;
+            document.body.style.backgroundColor = colors[colorIndex];
+        }
+    </script>
+</body>
+</html>

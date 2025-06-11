@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circles</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+        }
+
+        header {
+            grid-row: 1;
+        }
+
+        #circleCanvas {
+            grid-row: 2;
+            margin-top: 20px; /* Add margin to the top of the canvas */
+        }
+    </style>
+</head>
+<body class="circles-page">
+    <header>
+        <h1>Circles</h1>
+    </header>
+    <canvas id="circleCanvas" width="800" height="600"></canvas>
+    <script>
+        // Add event listener for keydown to detect Enter key press
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                calculateTotalMonths();
+            }
+        });
+
+        function calculateTotalMonths() {
+            const years = parseInt(document.getElementById('years').value) || 0;
+            const months = parseInt(document.getElementById('months').value) || 0;
+            const totalMonths = (years * 12) + months;
+            const theSleep = totalMonths + years; // Add 1 month for each year
+
+            if (theSleep < 0 || theSleep > 960) {
+                document.getElementById('result').textContent = 'Age entered incorrectly. Please re-enter age.';
+            } else {
+                document.getElementById('result').textContent = `Total months: ${theSleep}`;
+                changeBackgroundColor(theSleep);
+                window.location.href = `circles.html?totalMonths=${theSleep}`;
+            }
+        }
+
+        function changeBackgroundColor(totalMonths) {
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33A1'];
+            const colorIndex = totalMonths % colors.length;
+            document.body.style.backgroundColor = colors[colorIndex];
+        }
+
+        const canvas = document.getElementById('circleCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+
+            function drawGrid() {
+                const margin = 20; // Uniform margin for top, bottom, left, and right
+
+                canvas.width = window.innerWidth - margin * 2; // Adjust canvas width based on window size
+
+                // Calculate circle size based on window size
+                const circleRadius = Math.min(canvas.width, window.innerHeight) / 50; // Adjust the divisor to control size
+                const circleDiameter = circleRadius * 2;
+                const circleSpacing = circleRadius / 2; // Spacing between circles
+
+                const totalCircles = 960;
+                const circlesPerRow = Math.floor(canvas.width / (circleDiameter + circleSpacing));
+                const circlesPerColumn = Math.ceil(totalCircles / circlesPerRow);
+
+                // Adjust canvas height based on the number of rows
+                canvas.height = circlesPerColumn * (circleDiameter + circleSpacing) + margin * 2;
+
+                const originalColor = 'rgba(255, 255, 255, 1)'; // solid white
+                const inactiveColor = 'rgba(255, 255, 255, 0.5)'; // semi-transparent white
+
+                const circles = [];
+                let isDragging = false;
+
+                for (let row = 0; row < circlesPerColumn; row++) {
+                    for (let col = 0; col < circlesPerRow; col++) {
+                        const x = col * (circleDiameter + circleSpacing) + circleRadius + margin;
+                        const y = row * (circleDiameter + circleSpacing) + circleRadius + margin;
+                        const circle = { x, y, radius: circleRadius, color: originalColor, outline: '#000' };
+                        circles.push(circle);
+                        drawCircle(circle);
+                    }
+                }
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const totalMonths = parseInt(urlParams.get('totalMonths')) || 0;
+
+                for (let i = 0; i < circles.length; i++) {
+                    if (i < totalMonths) {
+                        circles[i].color = getRandomColor();
+                    } else {
+                        circles[i].color = inactiveColor;
+                    }
+                    drawCircle(circles[i]);
+                }
+
+                canvas.addEventListener('mousedown', (event) => {
+                    isDragging = true;
+                    handleMouseEvent(event);
+                });
+
+                canvas.addEventListener('mousemove', (event) => {
+                    if (isDragging) {
+                        handleMouseEvent(event);
+                    }
+                });
+
+                canvas.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+
+                canvas.addEventListener('mouseleave', () => {
+                    isDragging = false;
+                });
+
+                function handleMouseEvent(event) {
+                    const rect = canvas.getBoundingClientRect();
+                    const mouseX = event.clientX - rect.left;
+                    const mouseY = event.clientY - rect.top;
+
+                    circles.forEach(circle => {
+                        const distance = Math.sqrt((mouseX - circle.x) ** 2 + (mouseY - circle.y) ** 2);
+                        if (distance < circle.radius) {
+                            circle.color = circle.color === originalColor ? getRandomColor() : originalColor;
+                            drawCircle(circle);
+                        }
+                    });
+                }
+
+                function drawCircle(circle) {
+                    ctx.beginPath();
+                    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = circle.color;
+                    ctx.fill();
+                    ctx.strokeStyle = circle.outline;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+
+                function getRandomColor() {
+                    const r = Math.floor(Math.random() * 256);
+                    const g = Math.floor(Math.random() * 256);
+                    const b = Math.floor(Math.random() * 256);
+                    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+                }
+            }
+
+            window.addEventListener('resize', drawGrid);
+            drawGrid();
+
+            // Add event listener for keydown to detect spacebar press
+            window.addEventListener('keydown', (event) => {
+                if (event.code === 'Space') {
+                    window.location.href = 'home.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
